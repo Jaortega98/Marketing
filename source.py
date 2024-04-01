@@ -7,6 +7,9 @@ import ipywidgets as ipyw
 from ipywidgets import widgets, interactive_output, interact, interactive, fixed, widget
 from IPython.display import display
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.neighbors import NearestNeighbors
+from sklearn.pipeline import make_pipeline
+
 
 def create_df(query, dates=False):
 
@@ -69,12 +72,12 @@ def distributions():
 
 def pieplot():
 
-    query_1 = "SELECT COUNT(*) AS 'mas de nueve' FROM (SELECT movieId, title, ROUND(AVG(rating), 3) AS avg_ratings, COUNT(*) AS total_ratings FROM full_info GROUP BY movieId HAVING total_ratings > 9)"
-    query_2 = "SELECT COUNT(*) AS 'cero a nueve' FROM (SELECT movieId, title, ROUND(AVG(rating), 3) AS avg_ratings, COUNT(*) AS total_ratings FROM full_info GROUP BY movieId HAVING total_ratings BETWEEN 1 AND 9)"
+    query_1 = "SELECT COUNT(*) AS 'mas de nueve' FROM (SELECT movieId, COUNT(*) AS t_rated FROM ratings GROUP BY movieId HAVING t_rated > 9)"
+    query_2 = "SELECT COUNT(*) AS 'cero a nueve' FROM (SELECT movieId, COUNT(*) AS t_rated FROM ratings GROUP BY movieId HAVING t_rated BETWEEN 1 AND 9)"
     
     df = pd.melt(pd.concat([create_df(query_1), create_df(query_2)], axis=1), var_name="veces vista", value_name="peliculas")
     
-    fig = px.pie(df, names="veces vista", values="peliculas", width=800, height=430, title="<b>Proporcion peliculas cantidad de peliculas<br>por veces vista</b>",
+    fig = px.pie(df, names="veces vista", values="peliculas", width=800, height=430, title="<b>Proporcion  de peliculas<br>por veces vista</b>",
                 color_discrete_sequence=px.colors.qualitative.Set2, opacity=0.7, hover_data={"veces vista":False})
     
     fig.update_layout(title={"x":0.5})
@@ -110,11 +113,11 @@ def filter_popularity(type, n, yr):
         display(df)
 
 
-def popularity_recommendations():
+def popularity_recommendations(max_titles=60):
 
     wid_1 = widgets.Dropdown(options=["Mejor Calificada", "Mas Vista", "Mejor Calificada x Año de lanzamiento"], 
                          description="Tipo de Filtrado")
-    wid_2 = widgets.BoundedIntText(value=10, min=10, max=60, 
+    wid_2 = widgets.BoundedIntText(value=10, min=10, max=max_titles, 
                                 description="Numero de recomendaciones")
     wid_3 = widgets.Dropdown(options=create_df("SELECT DISTINCT released_yr FROM full_info").sort_values(by="released_yr").values.flatten().tolist(), 
                             description="Año")
@@ -147,16 +150,65 @@ def filter_content(title, n):
 
     display(movies.sort_values(by="similitud", ascending=False).iloc[:n,:])
 
-def content_recommendations():
+def content_recommendations(max_titles=60):
 
     wid_1 = widgets.Dropdown(options=create_df("SELECT DISTINCT title FROM movies ORDER BY title").values.flatten().tolist(), 
                           description="Titulo")
-    wid_2 = widgets.BoundedIntText(value=10, min=10, max=60, 
+    wid_2 = widgets.BoundedIntText(value=10, min=10, max=max_titles, 
                                 description="Recomendaciones")
     
 
     ui_1 = widgets.VBox([wid_1, wid_2])
 
     output = interactive_output(filter_content, {"title":wid_1, "n":wid_2})
+
+    display(ui_1, output)
+
+
+def filter_knn(title, n_neighbors=10):
+
+  query = "SELECT * FROM movies;"
+
+  movies = create_df(query)
+
+  movies["released_yr"] = movies["title"].str.extract("\((\d{4})\)").fillna(0).astype(int)
+
+  to_corr = pd.concat([movies["released_yr"], movies['genres'].str.get_dummies()], axis=1)
+
+  model = make_pipeline(MinMaxScaler(),
+                        NearestNeighbors(n_neighbors=n_neighbors, metric="cosine"))
+
+  model.fit(to_corr)
+
+
+  dis, id_dis = model.named_steps["nearestneighbors"].kneighbors(to_corr)
+
+  dis = pd.DataFrame(dis)
+
+  id_list = pd.DataFrame(id_dis)
+
+
+
+  movies_id = movies[movies['title'] == title].index[0]
+
+
+
+  inx = id_list.loc[movies_id]
+
+
+  display(movies.loc[inx,:])
+
+
+def knn_recommendations(max_titles=60):
+
+    wid_1 = widgets.Dropdown(options=create_df("SELECT DISTINCT title FROM movies ORDER BY title").values.flatten().tolist(),
+                         description="Titulo")
+    wid_2 = widgets.BoundedIntText(value=10, min=10, max=max_titles,
+                                description="Recomendaciones")
+
+
+    ui_1 = widgets.VBox([wid_1, wid_2])
+
+    output = interactive_output(filter_knn, {"title":wid_1, "n_neighbors":wid_2})
 
     display(ui_1, output)
