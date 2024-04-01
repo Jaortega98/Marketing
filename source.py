@@ -106,3 +106,39 @@ def popularity_recommendations():
     output = interactive_output(filter_popularity, {"type":wid_1, "n":wid_2, "yr":wid_3})
 
     display(ui_1, output)
+    
+def filter_content(title, n):
+    
+    query = "SELECT * FROM movies;"
+
+    movies = create_df(query).set_index("movieId")
+
+    movies["release_yr"] = movies["title"].str.extract("\((\d{4})\)")
+
+    escaler = MinMaxScaler()
+
+    index = movies[movies["title"] ==  title].index.values.tolist()[0]
+
+    to_corr = pd.concat([movies["release_yr"], movies['genres'].str.get_dummies()], axis=1)
+
+    to_corr = pd.DataFrame(escaler.fit_transform(to_corr), columns=to_corr.columns, index=to_corr.index)
+
+
+    movies["similitud"] = to_corr.corrwith(to_corr.loc[index], axis=1)
+
+
+    display(movies.sort_values(by="similitud", ascending=False).iloc[:n,:4])
+
+def content_recommendations():
+
+    wid_1 = widgets.Dropdown(options=create_df("SELECT DISTINCT title FROM movies ORDER BY title").values.flatten().tolist(), 
+                          description="Titulo")
+    wid_2 = widgets.BoundedIntText(value=10, min=10, max=60, 
+                                description="Recomendaciones")
+    
+
+    ui_1 = widgets.VBox([wid_1, wid_2])
+
+    output = interactive_output(filter_content, {"title":wid_1, "n":wid_2})
+
+    display(ui_1, output)
