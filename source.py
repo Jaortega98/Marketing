@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.express as px
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
-import ipywidgets as ipyw               
+import ipywidgets as ipyw       
 from ipywidgets import widgets, interactive_output, interact, interactive, fixed, widget
 from IPython.display import display
 from sklearn.preprocessing import MinMaxScaler
@@ -38,7 +38,7 @@ def preprocess(path="preprocess.sql"):
 
     df = create_df(query, dates=True)
 
-    df["released_yr"] = df["title"].str.extract("\((\d{4})\)")
+    df["released_yr"] = df["title"].str.extract("\((\d{4})\)").dropna()
 
     df.to_sql("full_info", conn, if_exists="replace", index=False)
 
@@ -165,7 +165,7 @@ def filter_content(title, n):
 
     movies = create_df(query).set_index("movieId")
 
-    movies["released_yr"] = movies["title"].str.extract("\((\d{4})\)").fillna(0).astype(int)
+    movies["released_yr"] = movies["title"].str.extract("\((\d{4})\)").fillna(2010).astype(int)
 
     escaler = MinMaxScaler()
 
