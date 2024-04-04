@@ -1,1 +1,1 @@
-![RecomendacionPeliculas](https://github.com/Jaortega98/Marketing/assets/160089978/f8f5f565-5f99-493e-a6d8-1481603f2f64)
+![RecomendacionPeliculas](https://github.com/Jaortega98/Marketing/assets/160089978/17c1a930-30ee-4b15-872b-8c38dfcf7679)
