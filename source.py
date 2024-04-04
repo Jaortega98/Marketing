@@ -243,3 +243,51 @@ def knn_recommendations(max_titles=60):
     output = interactive_output(filter_knn, {"title":wid_1, "n_neighbors":wid_2})
 
     display(ui_1, output)
+    
+def filter_user_knn(user, n_neighbors):
+
+    query = "SELECT movieId, title AS Titulo, genres AS Generos FROM movies;"
+    
+    query_s = f"SELECT DISTINCT movieId FROM full_info WHERE userId = {user}"
+    
+    movies = create_df(query)
+    
+    movies["Año de Lanzamiento"] = movies["Titulo"].str.extract("\((\d{4})\)").fillna(2010).astype(int)
+    
+    to_corr = pd.concat([movies["Año de Lanzamiento"], movies['Generos'].str.get_dummies()], axis=1)
+    
+    seen_movies = create_df(query_s)
+    
+    mid_seen = seen_movies.values.flatten()
+    ind_seen = movies[movies["movieId"].isin(mid_seen)].index
+    ind_unseen = movies[~movies["movieId"].isin(ind_seen)].index
+    
+    centroid = to_corr.loc[ind_seen].mean().to_frame().T
+    
+    
+    
+    model = make_pipeline(MinMaxScaler(),
+                          NearestNeighbors(n_neighbors=n_neighbors, metric="cosine"))
+    
+    model.fit(to_corr.loc[ind_unseen])
+    
+    
+    dis, id_dis = model.named_steps["nearestneighbors"].kneighbors(centroid)
+    
+    dis = pd.DataFrame(dis)
+    
+    id_dis = pd.DataFrame(id_dis)
+    
+    display(movies.iloc[id_dis.values.flatten(), 1:])
+
+def knn_user_recommendations(max_titles=60):
+
+    wid_1 = widgets.Dropdown(options=create_df("SELECT DISTINCT userId FROM ratings").values.flatten().tolist())
+    wid_2 = widgets.BoundedIntText(value=10, min=10, max=max_titles)
+
+
+    ui_1 = widgets.VBox([ipyw.HTML("<b>Id del usuario</b>"), wid_1, ipyw.HTML("<b>Cantidad de sugerencias</b>"),wid_2])
+
+    output = interactive_output(filter_user_knn, {"user":wid_1, "n_neighbors":wid_2})
+
+    display(ui_1, output)
