@@ -4,11 +4,14 @@ import plotly.express as px
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 import ipywidgets as ipyw       
-from ipywidgets import widgets, interactive_output
+from ipywidgets import widgets, interactive_output, interact, interactive, fixed, widget
 from IPython.display import display
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.neighbors import NearestNeighbors
 from sklearn.pipeline import make_pipeline
+from surprise import Reader, Dataset
+from surprise.model_selection import train_test_split, cross_validate, GridSearchCV
+from surprise import KNNWithMeans, KNNBasic, KNNWithZScore, KNNBaseline
 
 
 def create_df(query, dates=False):
@@ -41,6 +44,29 @@ def preprocess(path="preprocess.sql"):
     df["released_yr"] = df["title"].str.extract("\((\d{4})\)").dropna()
 
     df.to_sql("full_info", conn, if_exists="replace", index=False)
+
+    query_2 = "SELECT * FROM movies"
+
+    df = create_df(query_2)
+
+    dup = df[df.duplicated(subset="title", keep=False)].index.tolist()
+    dup_2 = df[df.duplicated(subset="title", keep=False)].index.tolist()
+
+    ind_drop = []
+
+    for i in dup:
+        dup_2.remove(i)
+        for j in dup_2:
+            if df.loc[i, "title"] == df.loc[j, "title"]:
+                if len(df.loc[i, "genres"]) < len(df.loc[j, "genres"]):
+                    ind_drop.append(i)
+                else:
+                    ind_drop.append(j)
+            
+
+    df.drop(ind_drop, inplace=True)
+
+    df.to_sql("movies", conn, if_exists="replace", index=False)
 
     conn.close()
 
@@ -125,12 +151,12 @@ def filter_popularity(type, n, yr, m_ten):
           
         else:
     
+    
           query = f'SELECT released_yr AS "Año de Lanzamiento", title AS Titulo, ROUND(AVG(rating), 3) AS "Promedio calificacion", COUNT(*) "Veces vista" FROM full_info GROUP BY "Año de Lanzamiento", Titulo HAVING "Año de Lanzamiento" = {yr} ORDER BY "Año de Lanzamiento" DESC, "Promedio calificacion" DESC'
       
           df = create_df(query)
       
           display(df.iloc[:n])
-
 
 def popularity_recommendations(max_titles=60):
 
@@ -218,16 +244,22 @@ def filter_knn(title, n_neighbors=10):
                             NearestNeighbors(n_neighbors=n_neighbors, metric="cosine"))
     
       model.fit(to_corr)
-
+    
+    
       dis, id_dis = model.named_steps["nearestneighbors"].kneighbors(to_corr)
     
       dis = pd.DataFrame(dis)
     
       id_list = pd.DataFrame(id_dis)
     
+    
+    
       movies_id = movies[movies['Titulo'] == title].index[0]
     
+    
+    
       inx = id_list.loc[movies_id]
+    
     
       display(movies.iloc[inx,1:])
 
@@ -243,7 +275,7 @@ def knn_recommendations(max_titles=60):
     output = interactive_output(filter_knn, {"title":wid_1, "n_neighbors":wid_2})
 
     display(ui_1, output)
-    
+
 def filter_user_knn(user, n_neighbors):
 
     query = "SELECT movieId, title AS Titulo, genres AS Generos FROM movies;"
@@ -289,5 +321,89 @@ def knn_user_recommendations(max_titles=60):
     ui_1 = widgets.VBox([ipyw.HTML("<b>Id del usuario</b>"), wid_1, ipyw.HTML("<b>Cantidad de sugerencias</b>"),wid_2])
 
     output = interactive_output(filter_user_knn, {"user":wid_1, "n_neighbors":wid_2})
+
+    display(ui_1, output)
+
+def create_pred(cv=5, cv_grid=3, path="preprocess_pred.sql"):
+
+    query = 'SELECT * FROM ratings'
+
+    df = create_df(query)
+    
+    min = df["rating"].min()
+    max = df["rating"].max()
+    
+    reader = Reader(rating_scale=(min, max))
+    
+    data = Dataset.load_from_df(df.iloc[:, :-1], reader)
+    
+    models = [KNNWithMeans(), KNNBasic(), KNNWithZScore(), KNNBaseline()]
+    
+    
+    model_results = pd.DataFrame()
+    
+    for model in models:
+    
+      CVscores = cross_validate(model, data, cv=cv, measures=["MAE", "RMSE"], n_jobs=-1)
+      df = pd.DataFrame(CVscores, index=[model.__class__.__name__]*cv).iloc[:, :2].rename(columns={"test_mae":"MAE", "test_rmse":"RSME"})
+      model_results = pd.concat([model_results, df])
+    
+    best_rsme = model_results.sort_values(by="RSME", ascending=False).index[0]
+    
+    model_chose = [i for i in models if i.__class__.__name__ == best_rsme][0].__class__
+    
+    
+    
+    param_grid = {"sim_options":{"name":["msd", "cosine"],
+                                 "min_support":[7],
+                                  "user_based":[False, True]}}
+    
+    grid_search = GridSearchCV(model_chose, param_grid=param_grid, cv=cv_grid, measures=["rmse"], n_jobs=-1)
+    
+    grid_search.fit(data)
+    
+    best_model = grid_search.best_estimator["rmse"]
+    
+    
+    train = data.build_full_trainset()
+    test = train.build_anti_testset()
+    
+    best_model.fit(train)
+    
+    predictions = best_model.test(test)
+    pred_df = pd.DataFrame(predictions)
+    
+    conn = sqlite3.connect("db_movies")
+    cur = conn.cursor()
+    
+    pred_df.iloc[:, :-1].to_sql("predictions", conn, if_exists="replace", index=False)
+
+    with open(path, "r") as f:
+        cur.executescript(f.read())
+    
+    conn.close()
+
+
+def filter_colab(user_id, n):
+
+    query = f'SELECT title AS Titulo, genres AS Generos, CAST(ROUND((est/(SELECT MAX(rating) FROM ratings))*100, 1) AS TEXT) AS Estimacion FROM suggestions WHERE userId = {user_id} ORDER BY Estimacion DESC LIMIT {n}'
+    
+    df = create_df(query)
+
+    df["Estimacion"] = (df["Estimacion"].astype(float)/100)
+
+    df["Estimacion"] = df["Estimacion"].apply('{:.1%}'.format)
+
+    display(df)
+
+def colab_recommendations(max_titles=60):
+
+    wid_1 = widgets.Dropdown(options=create_df("SELECT DISTINCT userId FROM ratings").values.flatten().tolist())
+    wid_2 = widgets.BoundedIntText(value=10, min=10, max=max_titles)
+
+
+    ui_1 = widgets.VBox([ipyw.HTML("<b>Id del usuario</b>"), wid_1, ipyw.HTML("<b>Cantidad de sugerencias</b>"),wid_2])
+
+    output = interactive_output(filter_colab, {"user_id":wid_1, "n":wid_2})
 
     display(ui_1, output)
