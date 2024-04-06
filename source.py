@@ -3,8 +3,7 @@ import pandas as pd
 import plotly.express as px
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
-import ipywidgets as ipyw       
-from ipywidgets import widgets, interactive_output, interact, interactive, fixed, widget
+from ipywidgets import widgets, interactive_output, HTML
 from IPython.display import display
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.neighbors import NearestNeighbors
@@ -137,9 +136,7 @@ class Exploration:
 
     def distributions(self):
         
-        """Realiza la representación gráfica de las distribuciones estadísticas tanto de la frecuencia de visualización 
-        de las películas en la base de datos como de la cantidad de películas vistas por usuario
-
+        """Realiza la representación gráfica de las distribuciones estadísticas tanto de la frecuencia de visualización de las películas en la base de datos como de la cantidad de películas vistas por usuario
 
         """
         # Consulta con la frecuencia de visualizacion de las peliculas
@@ -174,8 +171,7 @@ class Exploration:
     
     def pieplot(self):
 
-        """Realiza la representación gráfica de la proporcion de peliculas vistas de 0-9 veces 
-        y mas de 10 veces en la base de datos
+        """Realiza la representación gráfica de la proporcion de peliculas vistas de 0-9 veces y mas de 10 veces en la base de datos
 
         """
         # Consulta con la cantidad de peliculas vistas mas de 9 veces
@@ -215,6 +211,7 @@ class SystemRecomendation:
             Funcion para crear los Data Frames de las consultas
         path_db : str, opcional 
             ruta a la base de datos
+
         """
         self.create_df = cdf
         self.db = path_db
@@ -234,6 +231,7 @@ class SystemRecomendation:
                 Año a filtrar las peliculas, solo funciona cuando type = Mejor Calificada x Año de lanzamiento
             m_ten : bool, opcional
                 Si se quieren ver solo peliculas con mas de diez visualizaciones
+
         """
         # Filtro para el tipo de consulta
         if type == "Mejor Calificada":
@@ -318,10 +316,10 @@ class SystemRecomendation:
                 wid_4.disabled = True
 
         # Ubicar widgets en columnas verticales
-        ui_1 = widgets.VBox([ipyw.HTML("<b>Tipo de filtrado</b>"), wid_1, ipyw.HTML("<b>Cantidad de sugerencias</b>"),
-                            wid_2, ipyw.HTML("<b>Año de lanzamiento</b>"), wid_3])
+        ui_1 = widgets.VBox([HTML("<b>Tipo de filtrado</b>"), wid_1, HTML("<b>Cantidad de sugerencias</b>"),
+                            wid_2, HTML("<b>Año de lanzamiento</b>"), wid_3])
         # Ubicar widgets en columnas verticales
-        ui_2 = widgets.VBox([ipyw.HTML("<b>Vista mas de 10 veces</b>"), wid_4])
+        ui_2 = widgets.VBox([HTML("<b>Vista mas de 10 veces</b>"), wid_4])
         # Ubicar las columnas verticales en una horizontal
         ui_T = widgets.HBox([ui_1, ui_2])
 
@@ -348,6 +346,7 @@ class SystemRecomendation:
                 Cantidad de sugerencias a mostrar
             fillna_yr : int, default=2010
                 Año para completar el valor de la columna de año de lanzamiento de las peliculas que no lo tengan en su titulo
+
         """
         # Cosulta de todas las peliculas con titulo, Id y genero
         query = "SELECT movieId, title AS Titulo, genres AS Generos FROM movies;"
@@ -393,14 +392,13 @@ class SystemRecomendation:
         wid_2 = widgets.BoundedIntText(value=10, min=10, max=max_titles)
         
         # Ubicar widgets en una columna vertical
-        ui_1 = widgets.VBox([ipyw.HTML("<b>Titulo de la pelicula</b>"), wid_1, ipyw.HTML("<b>Cantidad de sugerencias</b>"),wid_2])
+        ui_1 = widgets.VBox([HTML("<b>Titulo de la pelicula</b>"), wid_1, HTML("<b>Cantidad de sugerencias</b>"),wid_2])
 
         # Hacer widgets interactivos con la funcion filter_content
         output = interactive_output(self.filter_content, {"title":wid_1, "n":wid_2})
 
         # Mostrar resultados
         display(ui_1, output)
-
 
 
     def filter_knn(self, title, n_neighbors=10, fillna_yr=2010):
@@ -415,6 +413,7 @@ class SystemRecomendation:
                 Cantidad de sugerencias a encontrar con el algoritmo
             fillna_yr : int, default=2010
                 Año para completar el valor de la columna de año de lanzamiento de las peliculas que no lo tengan en su titulo
+
         """
         # Cosulta de todas las peliculas con titulo, Id y genero
         query = "SELECT movieId, title AS Titulo, genres AS Generos FROM movies"
@@ -465,14 +464,13 @@ class SystemRecomendation:
         wid_2 = widgets.BoundedIntText(value=10, min=10, max=max_titles)
 
         # Ubicar widgets en una columna vertical
-        ui_1 = widgets.VBox([ipyw.HTML("<b>Titulo de la pelicula</b>"), wid_1, ipyw.HTML("<b>Cantidad de sugerencias</b>"),wid_2])
+        ui_1 = widgets.VBox([HTML("<b>Titulo de la pelicula</b>"), wid_1, HTML("<b>Cantidad de sugerencias</b>"),wid_2])
 
         # Hacer widgets interactivos con la funcion filter_knn
         output = interactive_output(self.filter_knn, {"title":wid_1, "n_neighbors":wid_2})
 
         # Mostrar resultados
         display(ui_1, output)
-
 
     
     def filter_user_knn(self, user, n_neighbors, fillna_yr=2010):
@@ -487,6 +485,7 @@ class SystemRecomendation:
                 Cantidad de sugerencias a encontrar con el algoritmo
             fillna_yr : int, default=2010
                 Año para completar el valor de la columna de año de lanzamiento de las peliculas que no lo tengan en su titulo
+
         """
         # Cosulta de todas las peliculas con titulo, Id y genero
         query = "SELECT movieId, title AS Titulo, genres AS Generos FROM movies"
@@ -529,7 +528,6 @@ class SystemRecomendation:
         display(movies.iloc[id_dis.values.flatten(), 1:])
 
 
-
     def knn_user_recommendations(self, max_titles=60):
 
         """Crea widgets interactivos para filtrar las peliculas mas recomendadas a cada usuario segun el contenido visto por este
@@ -546,7 +544,7 @@ class SystemRecomendation:
         wid_2 = widgets.BoundedIntText(value=10, min=10, max=max_titles)
 
         # Ubicar widgets en una columna vertical
-        ui_1 = widgets.VBox([ipyw.HTML("<b>Id del usuario</b>"), wid_1, ipyw.HTML("<b>Cantidad de sugerencias</b>"),wid_2])
+        ui_1 = widgets.VBox([HTML("<b>Id del usuario</b>"), wid_1, HTML("<b>Cantidad de sugerencias</b>"),wid_2])
 
         # Hacer widgets interactivos con la funcion filter_user_knn
         output = interactive_output(self.filter_user_knn, {"user":wid_1, "n_neighbors":wid_2})
@@ -557,8 +555,7 @@ class SystemRecomendation:
 
     def create_pred(self, cv=5, cv_grid=3, path="preprocess_pred.sql"):
 
-        """Crea predicciones de calificacion a las peliculas no vistas por el usuario teniendo en cuanta la calificacion
-        dada a las peliculas vistas
+        """Crea predicciones de calificacion a las peliculas no vistas por el usuario teniendo en cuanta la calificacion dada a las peliculas vistas
 
         Parametros
         -----------
@@ -568,6 +565,7 @@ class SystemRecomendation:
                Numero de folds para el cross validation del entrenamiento del modelo seleccionado 
             path : str, default=preprocess_pred.sql
                Ruta al archivo .sql con las consultas de creacion de la tabla de predicciones
+
         """
         # Cosulta de todos los ratings registrados por los usuarios
         query = 'SELECT * FROM ratings'
@@ -659,6 +657,7 @@ class SystemRecomendation:
                 Id del usuario
             n : int
                 Cantidad de sugerencias a mostrar
+
         """
         # Cosulta de todos las predicciones de calificacion mas alta para cada usuario
         query = f'SELECT title AS Titulo, genres AS Generos, CAST(ROUND((est/(SELECT MAX(rating) FROM ratings))*100, 1) AS TEXT) AS Estimacion FROM suggestions WHERE userId = {user} ORDER BY Estimacion DESC LIMIT {n}'
@@ -676,8 +675,7 @@ class SystemRecomendation:
 
     def colab_recommendations(self, max_titles=60):
 
-        """Crea widgets interactivos para filtrar las peliculas mas recomendadas a cada usuario segun la prediccion
-        de calificacion obtenida mediante el contenido visto por este
+        """Crea widgets interactivos para filtrar las peliculas mas recomendadas a cada usuario segun la prediccion de calificacion obtenida mediante el contenido visto por este
 
         Parametros
         -----------
@@ -685,16 +683,79 @@ class SystemRecomendation:
                 Cantidad maxima de sugerencias a mostrar
 
         """
+
         # Widget para el Id del usuario (user)
         wid_1 = widgets.Dropdown(options=self.create_df("SELECT DISTINCT userId FROM ratings").values.flatten().tolist())
         # Widget para la cantidad de valores a mostrar (n)
         wid_2 = widgets.BoundedIntText(value=10, min=10, max=max_titles)
 
         # Ubicar widgets en una columna vertical
-        ui_1 = widgets.VBox([ipyw.HTML("<b>Id del usuario</b>"), wid_1, ipyw.HTML("<b>Cantidad de sugerencias</b>"),wid_2])
+        ui_1 = widgets.VBox([HTML("<b>Id del usuario</b>"), wid_1, HTML("<b>Cantidad de sugerencias</b>"),wid_2])
 
         # Hacer widgets interactivos con la funcion filter_colab
         output = interactive_output(self.filter_colab, {"user":wid_1, "n":wid_2})
 
         # Mostrar resultados
         display(ui_1, output)
+
+
+    def filter_system(self, type_sr):
+
+        """Despliega el tipo de sistema de recomendacion escogido
+
+            Parametros
+            -----------
+                type_sr: str
+                    Tipo de systema de recomendacion a desplegar. Puede tomar los valores de: Basado en Popularidad, Basado en Contenido, Basado en Contenido (KNN), Basado en Contenido visto por usuario, Colaborativo
+
+        """
+
+        # Condicional para filtrar el tipo de sistema escogido
+        if type_sr == "Basado en Popularidad":
+            # Agregar titulo
+            display(HTML('<br><h1 style="text-align: center; font-size:27px;">Sistema de recomendacion basado en popularidad</h1><br>'))
+            # Llamar funcion
+            self.popularity_recommendations(150)
+            
+        elif type_sr == "Basado en Contenido":
+            # Agregar titulo
+            display(HTML('<br><h1 style="text-align: center; font-size:27px;">Sistema de recomendacion basado en contenido</h1><br>'))
+            # Llamar funcion
+            self.content_recommendations(150)
+        
+        elif type_sr == "Basado en Contenido (KNN)":
+            # Agregar titulo
+            display(HTML('<br><h1 style="text-align: center; font-size:27px;">Sistema de recomendacion basado en contenido (KNN)</h1><br>'))
+            # Llamar funcion
+            self.knn_recommendations(150)
+        
+        elif type_sr == "Basado en Contenido visto por usuario":
+            # Agregar titulo
+            display(HTML('<br><h1 style="text-align: center; font-size:27px;">Sistema de recomendacion basado en contenido visto por el usuario</h1><br>'))
+            # Llamar funcion
+            self.knn_user_recommendations(150)
+        
+        elif type_sr == "Colaborativo":
+            # Agregar titulo
+            display(HTML('<br><h1 style="text-align: center; font-size:27px;">Sistema de recomendacion Colaborativo</h1><br>'))
+            # Llamar funcion
+            self.colab_recommendations(150)
+
+
+    def display_system(self):
+
+            """Crea un widget interactivo para filtrar los tipos de sistemas de recomendacion
+
+            """
+            # Widget para el tipo de sistema de recomendacion
+            wid_1 = widgets.Dropdown(options=["Basado en Popularidad", "Basado en Contenido", "Basado en Contenido (KNN)", 
+                                            "Basado en Contenido visto por usuario", "Colaborativo"], value=None)
+
+            # Ubicar widgets en una columna vertical
+            ui_1 = widgets.VBox([HTML("<b>Elija el tipo de sistema de recomendacion</b>"), wid_1])
+
+            # Hacer widgets interactivos con la funcion filter_system
+            output = interactive_output(self.filter_system, {"type_sr":wid_1})
+
+            # Mostrar resultados
+            display(ui_1, output)
