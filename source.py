@@ -744,18 +744,33 @@ class SystemRecomendation:
 
     def display_system(self):
 
-            """Crea un widget interactivo para filtrar los tipos de sistemas de recomendacion
+        """Crea un widgets interactivos para filtrar los tipos de sistemas de recomendacion y realizar predicciones para los filtros colaborativos
 
-            """
-            # Widget para el tipo de sistema de recomendacion
-            wid_1 = widgets.Dropdown(options=["Basado en Popularidad", "Basado en Contenido", "Basado en Contenido (KNN)", 
-                                            "Basado en Contenido visto por usuario", "Colaborativo"], value=None)
+        """
+        # Widget para el tipo de sistema de recomendacion
+        wid_1 = widgets.Dropdown(options=["Basado en Popularidad", "Basado en Contenido", "Basado en Contenido (KNN)", 
+                                        "Basado en Contenido visto por usuario", "Filtros Colaborativos"], value=None)
+        # Widget para ejecutar la funcion y realizar las predicciones para los filtros colaborativos
+        wid_2 = widgets.Button(description="Realizar Predicciones")
 
-            # Ubicar widgets en una columna vertical
-            ui_1 = widgets.VBox([HTML("<b>Elija el tipo de sistema de recomendacion</b>"), wid_1])
+        # Funcion auxiliar
+        def make_pred(wid_2):
+            # Ejecutar funcion de predicciones
+            self.create_pred()
 
-            # Hacer widgets interactivos con la funcion filter_system
-            output = interactive_output(self.filter_system, {"type_sr":wid_1})
+        # Relacionar funcion al widget 
+        wid_2.on_click(make_pred)
 
-            # Mostrar resultados
-            display(ui_1, output)
+        # Ubicar widgets en una columna vertical
+        ui_1 = widgets.VBox([HTML("<h2>Sistema de recomendacion</h2><br>"), wid_1], layout=dict(margin="0px 80px 0px 200px"))
+        # Ubicar widgets en una columna vertical
+        ui_2 = widgets.VBox([HTML("<h2>Filtros Colaborativos</h2><br>"), wid_2], layout=dict(margin="0px 0px 0px 0px"))
+
+        # Ubicar widgets en columnas horizontales
+        ui_T = widgets.HBox([ui_1, ui_2])
+
+        # Hacer widgets interactivos con la funcion filter_system
+        output = interactive_output(self.filter_system, {"type_sr":wid_1})
+
+        # Mostrar resultados
+        display(ui_T, output)
