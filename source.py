@@ -65,13 +65,13 @@ class Exploration:
         return df
     
 
-    def preprocess(self, path="preprocess.sql"):
+    def preprocess(self, path="preprocessing/preprocess.sql"):
 
         """Preprocesa las bases de datos con las consultas especificadas
 
         Parametros
         -----------
-            path : str, default=preprocess.sql
+            path : str, default=preprocessing/preprocess.sql
                ruta al archivo .sql con las consultas de preprocesamiento 
         
         """
@@ -553,7 +553,7 @@ class SystemRecomendation:
         display(ui_1, output)
 
 
-    def create_pred(self, cv=5, cv_grid=3, path="preprocess_pred.sql"):
+    def create_pred(self, cv=5, cv_grid=3, path="preprocessing/preprocess_pred.sql"):
 
         """Crea predicciones de calificacion a las peliculas no vistas por el usuario teniendo en cuanta la calificacion dada a las peliculas vistas
 
@@ -563,7 +563,7 @@ class SystemRecomendation:
                Numero de folds para el cross validation 
             cv_grid : int, default=3
                Numero de folds para el cross validation del entrenamiento del modelo seleccionado 
-            path : str, default=preprocess_pred.sql
+            path : str, default=preprocessing/preprocess_pred.sql
                Ruta al archivo .sql con las consultas de creacion de la tabla de predicciones
 
         """
