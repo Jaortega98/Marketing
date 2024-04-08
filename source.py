@@ -84,7 +84,6 @@ class Exploration:
 
         # Abrir archivo con consultas
         with open(path, "r") as f:
-
             # Ejecutar consultas
             cur.executescript(f.read())
         
@@ -735,9 +734,9 @@ class SystemRecomendation:
             # Llamar funcion
             self.knn_user_recommendations(150)
         
-        elif type_sr == "Colaborativo":
+        elif type_sr == "Filtros Colaborativos":
             # Agregar titulo
-            display(HTML('<br><h1 style="text-align: center; font-size:27px;">Sistema de recomendacion Colaborativo</h1><br>'))
+            display(HTML('<br><h1 style="text-align: center; font-size:27px;">Sistema de recomendacion por Filtros Colaborativos</h1><br>'))
             # Llamar funcion
             self.colab_recommendations(150)
 
@@ -761,10 +760,13 @@ class SystemRecomendation:
         # Relacionar funcion al widget 
         wid_2.on_click(make_pred)
 
+        # Editar color del buton
+        wid_2.style.button_color = 'DarkGray'
+
         # Ubicar widgets en una columna vertical
         ui_1 = widgets.VBox([HTML("<h2>Sistema de recomendacion</h2><br>"), wid_1], layout=dict(margin="0px 80px 0px 200px"))
         # Ubicar widgets en una columna vertical
-        ui_2 = widgets.VBox([HTML("<h2>Filtros Colaborativos</h2><br>"), wid_2], layout=dict(margin="0px 0px 0px 0px"))
+        ui_2 = widgets.VBox([HTML("<h2>Para Filtros Colaborativos</h2><br>"), wid_2], layout=dict(margin="0px 0px 0px 0px"))
 
         # Ubicar widgets en columnas horizontales
         ui_T = widgets.HBox([ui_1, ui_2])
